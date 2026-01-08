@@ -1,0 +1,33 @@
+version: "3.8"
+
+services:
+  db:
+    image: mariadb:11.2.2
+    container_name: notes-db
+    environment:
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_DATABASE: prgms_notes
+      MARIADB_USER: prgms
+      MARIADB_PASSWORD: prgms
+    ports:
+      - "30036:3306" # K8s 설정에 맞춰 30036으로 설정 (기존 3306과 충돌 방지)
+    volumes:
+      # 중요: 초기화 스크립트를 자동으로 실행하도록 연결합니다.
+      - ./init-db.sql:/docker-entrypoint-initdb.d/1-init-db.sql
+      - ./init-user.sql:/docker-entrypoint-initdb.d/2-init-user.sql
+      # 데이터 영속성을 위한 볼륨 (notes-db-volume.yaml 역할 대체)
+      - ./mysql_data:/var/lib/mysql
+
+  backend:
+    build: ./backend
+    container_name: notes-be
+    depends_on:
+      - db
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: prgms
+      DB_PASSWORD: prgms
+      DB_NAME: prgms_notes
+    ports:
+      - "3031:3031"

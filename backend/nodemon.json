@@ -1,0 +1,8 @@
+{
+    "$schema": "https://json.schemastore.org/nodemon.json",
+    "watch": ["src"],
+    "ext": "ts,json",
+    "ignore": ["src/**/*.test.ts"],
+    "exec": "tsc && node build/index.js",
+    "legacyWatch": true
+}
