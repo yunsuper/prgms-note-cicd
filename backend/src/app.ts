@@ -25,8 +25,9 @@ app.get("/", (req, res) => {
     res.send("Dev-Connect 백엔드 서버 정상 작동 중!");
 });
 
-app.use("/", userRouter); // Base: /
-app.use("/notes", noteRouter);       // Base: /notes
+app.use("/users", userRouter);
+
+app.use("/notes", noteRouter); // Base: /notes
 app.use("/healthcheck", healthRouter); // Base: /healthcheck
 
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
