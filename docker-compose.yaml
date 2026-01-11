@@ -10,13 +10,13 @@ services:
       MARIADB_USER: prgms
       MARIADB_PASSWORD: prgms
     ports:
-      - "30036:3306" # K8s 설정에 맞춰 30036으로 설정 (기존 3306과 충돌 방지)
+      - "30036:3306"
     volumes:
-      # 중요: 초기화 스크립트를 자동으로 실행하도록 연결합니다.
       - ./init-db.sql:/docker-entrypoint-initdb.d/1-init-db.sql
       - ./init-user.sql:/docker-entrypoint-initdb.d/2-init-user.sql
-      # 데이터 영속성을 위한 볼륨 (notes-db-volume.yaml 역할 대체)
       - ./mysql_data:/var/lib/mysql
+    networks:
+      - notes
 
   backend:
     build: ./backend
@@ -31,3 +31,21 @@ services:
       DB_NAME: prgms_notes
     ports:
       - "3031:3031"
+    networks:
+      - notes
+
+  frontend:
+    build: ./frontend
+    container_name: notes-fe
+    # 가이드라인에 따른 런타임 환경변수 설정
+    environment:
+      - REACT_APP_API_BASE_URL=http://localhost:3031
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    networks:
+      - notes
+
+networks:
+  notes: {}
