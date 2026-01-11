@@ -3,7 +3,8 @@ import jwt from "jsonwebtoken";
 import { User } from "../models/user";
 
 // 로그인 로직(users.ts)에서 사용하는 비밀키와 반드시 일치해야 합니다.
-const JWT_SECRET = "super-secret-key";
+const JWT_SECRET = process.env.JWT_SECRET || "super-secret-key";
+
 
 export async function authenticateUser(
     req: Request,

@@ -17,7 +17,7 @@ COPY ./build/ ./build/
 
 # 6. 기본 환경변수 설정
 ENV PORT=3031 \
-    NODE_ENV=production
+    NODE_ENV=development
 
 # 7. 백엔드가 요청을 수신할 포트 노출
 EXPOSE 3031

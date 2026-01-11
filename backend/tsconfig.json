@@ -12,7 +12,11 @@
         "moduleResolution": "node",
         "isolatedModules": true,
         "outDir": "./build",
-        "rootDir": "./src"
+        "rootDir": "./src",
+        "baseUrl": "src",
+        "paths": {
+            "@/*": ["*"]
+        }
     },
     "include": ["src"],
     "exclude": ["src/**/*.test.ts", "src/**/__mocks__/*.ts"]

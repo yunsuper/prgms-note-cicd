@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notes-db
+  namespace: prgms-notes
+spec:
+  selector:
+    matchLabels:
+      run: notes-db
+  template:
+    metadata:
+      labels:
+        run: notes-db
+    spec:
+      containers:
+      - name: mariadb
+        image: mariadb:11.2.2
+        ports:
+        - containerPort: 3306
+        env:
+        - name: MARIADB_ROOT_PASSWORD
+          value: "root"
+        - name: MARIADB_DATABASE
+          value: "prgms_notes"
+        - name: MARIADB_USER
+          value: "prgms"
+        - name: MARIADB_PASSWORD
+          value: "prgms"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notes-db
+  namespace: prgms-notes
+spec:
+  selector:
+    run: notes-db
+  ports:
+  - port: 3306
+    targetPort: 3306

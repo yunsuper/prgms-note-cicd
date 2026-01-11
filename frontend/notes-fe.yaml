@@ -1,0 +1,43 @@
+# frontend/notes-fe.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notes-fe
+  namespace: prgms-notes
+spec:
+  selector:
+    matchLabels:
+      run: notes-fe
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        run: notes-fe
+    spec:
+      containers:
+      - name: notes-frontend
+        image: yunsuper/notes-fe:latest # 💡 본인 이미지 주소로 수정
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+        env:
+        - name: REACT_APP_API_BASE_URL
+          value: "http://localhost:30031" # 💡 백엔드 서비스 주소
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: notes-fe
+  namespace: prgms-notes
+  labels:
+    run: notes-fe
+spec:
+  type: NodePort
+  selector:
+    run: notes-fe
+  ports:
+  - port: 80
+    targetPort: 3000  # 💡 실제 컨테이너 내부 포트 (로그에서 확인된 3000번)
+    nodePort: 30030 # 💡 외부 접속 포트 (http://localhost:30030)

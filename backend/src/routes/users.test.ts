@@ -2,7 +2,7 @@ import request from "supertest";
 import express from "express";
 import cookieParser from "cookie-parser";
 import usersRouter from "./users"; // 검사할 라우터를 가져옵니다.
-import { MOCK_USERS } from "../models/user"; 
+import { MOCK_USERS } from "../models/__mocks__/user"; 
 
 jest.mock("../models/user");
 

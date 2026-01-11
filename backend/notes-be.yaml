@@ -1,0 +1,46 @@
+# backend/notes-be.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notes-be
+  namespace: prgms-notes
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: notes-be
+  template:
+    metadata:
+      labels:
+        run: notes-be
+    spec:
+      containers:
+      - name: notes-backend
+        image: yunsuper/notes-be:30030 # 💡 본인 이미지 주소로 수정
+        imagePullPolicy: Always
+        env:
+          - name: NODE_ENV
+            value: "development"
+          - name: CORS_ALLOWED_ORIGIN
+            value: "http://localhost:30030"
+        envFrom:
+        - configMapRef:
+            name: notes-be-config # 💡 ConfigMap에서 DB 설정 주입
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: notes-be
+  namespace: prgms-notes
+  labels:
+    run: notes-be
+spec:
+  type: NodePort # 💡 로컬 테스트를 위해 NodePort 사용
+  selector:
+    run: notes-be
+  ports:
+  - port: 3031       # 서비스 포트
+    targetPort: 3031 # 컨테이너 포트
+    nodePort: 30031  # 외부 접속 포트 (http://localhost:30031)
