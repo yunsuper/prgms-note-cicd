@@ -45,29 +45,33 @@ spec:
             }
         }
 
-        stage('2. 유닛 테스트 (Backend)') {
+        stage('2. 소스 빌드 및 테스트') {
             steps {
                 container('builder') {
-                    // backend 폴더가 있다면 그 안에서 테스트를 수행합니다.
                     sh '''
-                        if [ -d "backend" ]; then
-                            cd backend
-                            npm install
-                            npm test || echo "Backend test failed but continuing..."
-                        else
-                            echo "No backend directory found, skipping tests."
-                        fi
+                        echo "--- Backend Build & Test ---"
+                        cd backend
+                        npm install
+                        npm run build  # <--- 이 단계가 반드시 있어야 Docker COPY가 성공합니다
+                        npm test || echo "Backend test failed but continuing..."
+                        cd ..
+
+                        echo "--- Frontend Build ---"
+                        cd frontend
+                        npm install
+                        # 프론트엔드 빌드 결과물 생성 (필요시)
+                        # npm run build 
+                        cd ..
                     '''
                 }
             }
         }
 
-        stage('3. Docker 이미지 빌드') {
+        stage('3. Docker 이미지 패키징') {
             steps {
                 container('builder') {
                     sh '''
                         echo "이미지 빌드 시작..."
-                        # 실제 폴더명인 backend와 frontend를 사용합니다.
                         docker build -t ${IMG_BE} ./backend
                         docker build -t ${IMG_FE} ./frontend
                     '''
@@ -80,7 +84,6 @@ spec:
                 container('builder') {
                     dir('terraform') {
                         sh '''
-                            # 스크립트에 실행 권한을 부여하고 실행합니다.
                             chmod +x ../scripts/dpy-staging.sh
                             ../scripts/dpy-staging.sh on
                         '''
@@ -94,14 +97,13 @@ spec:
         cleanup {
             container('builder') {
                 script {
-                    // 배포가 된 적이 있을 때만 삭제를 시도합니다.
                     try {
                         dir('terraform') {
                             sh 'chmod +x ../scripts/dpy-staging.sh'
                             sh '../scripts/dpy-staging.sh off'
                         }
                     } catch (e) {
-                        echo "Cleanup skipped or failed: ${e.message}"
+                        echo "Cleanup skipped: ${e.message}"
                     }
                 }
             }

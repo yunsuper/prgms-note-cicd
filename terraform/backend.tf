@@ -1,3 +1,4 @@
+# --- Variables ---
 variable "db_host" {
   type = string
 }
@@ -23,47 +24,36 @@ variable "frontend_url" {
 }
 
 variable "container_image_be" {
-  type = string
-  default = "<Your image URI here>"
+  type    = string
+  default = "yunsuper/notes-be:latest" # 로컬 이미지 이름으로 기본값 설정
 }
 
+# --- Resources ---
+
+# 1. 백엔드 설정값 (ConfigMap) - 중복 제거됨
 resource "kubernetes_config_map" "backend-config" {
   metadata {
-    name = "notes-be-config"
+    name      = "notes-be-config"
     namespace = "prgms-notes"
   }
   data = {
-    DB_HOST = var.db_host
-    DB_PORT = var.db_port
-    DB_USER = var.db_user
-    DB_PASSWD = var.db_passwd
-    DB_NAME = var.db_name
+    DB_HOST             = var.db_host
+    DB_PORT             = var.db_port
+    DB_USER             = var.db_user
+    DB_PASSWD           = var.db_passwd
+    DB_NAME             = var.db_name
     CORS_ALLOWED_ORIGIN = var.frontend_url
   }
 }
 
-resource "kubernetes_config_map" "backend-config" {
-  metadata {
-    name = "notes-be-config"
-    namespace = "prgms-notes"
-  }
-  data = {
-    DB_HOST = var.db_host
-    DB_PORT = var.db_port
-    DB_USER = var.db_user
-    DB_PASSWD = var.db_passwd
-    DB_NAME = var.db_name
-    CORS_ALLOWED_ORIGIN = var.frontend_url
-  }
-}
-
+# 2. 백엔드 배포 (Deployment)
 resource "kubernetes_deployment" "backend" {
   metadata {
-    name = "notes-be"
+    name      = "notes-be"
+    namespace = "prgms-notes"
     labels = {
       App = "notes-backend"
     }
-    namespace = "prgms-notes"
   }
   spec {
     replicas = 1
@@ -80,25 +70,25 @@ resource "kubernetes_deployment" "backend" {
       }
       spec {
         container {
-          image = var.container_image_be
-          # [로컬 최적화] 로컬 이미지를 우선 사용하도록 변경
-          image_pull_policy = "IfNotPresent" 
-          name = "notes-be"
+          name              = "notes-be"
+          image             = var.container_image_be
+          image_pull_policy = "IfNotPresent" # 젠킨스가 빌드한 로컬 이미지를 사용
+          
           env_from {
             config_map_ref {
-              name = "notes-be-config"
+              name = kubernetes_config_map.backend-config.metadata[0].name
             }
           }
         }
-        # [삭제] 로컬 환경에서는 AWS 자격 증명이 필요 없으므로 삭제합니다.
       }
     }
   }
 }
 
+# 3. 백엔드 서비스 (Service)
 resource "kubernetes_service" "backend" {
   metadata {
-    name = "notes-be"
+    name      = "notes-be"
     namespace = "prgms-notes"
   }
   spec {
