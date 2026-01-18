@@ -7,8 +7,8 @@ kind: Pod
 spec:
   containers:
   - name: builder
-    image: yunsuper/jenkins-builder:latest
-    imagePullPolicy: IfNotPresent
+    image: "node:20-bookworm" 
+    imagePullPolicy: "IfNotPresent"
     command:
     - cat
     tty: true
