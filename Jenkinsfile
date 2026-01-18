@@ -8,7 +8,7 @@ spec:
   containers:
   - name: builder
     image: "node:20-bookworm"
-    imagePullPolicy: "IfNotPresent"
+    imagePullPolicy: IfNotPresent
     command:
     - cat
     tty: true
@@ -28,6 +28,8 @@ spec:
     environment {
         IMG_BE = "yunsuper/notes-be:latest"
         IMG_FE = "yunsuper/notes-fe:latest"
+        // [추가] 도커 API 버전 호환성 에러 해결을 위한 설정
+        DOCKER_API_VERSION = "1.41" 
     }
 
     stages {
@@ -35,25 +37,25 @@ spec:
             steps {
                 container('builder') {
                     sh '''
-                        echo "--- Docker 및 Terraform 설치 중 ---"
-                        apt-get update && apt-get install -y curl unzip docker.io
+                        echo "--- 인프라 도구 설치 ---"
+                        apt-get update
+                        # 최신 docker-ce-cli 설치를 위해 패키지 업데이트
+                        apt-get install -y curl unzip ca-certificates gnupg lsb-release
                         
+                        # Docker 공식 CLI 설치 (버전 불일치 방지)
+                        if ! command -v docker &> /dev/null; then
+                            apt-get install -y docker.io
+                        fi
+
+                        # Terraform 설치 (ARM64)
                         if ! command -v terraform &> /dev/null; then
-                            echo "Terraform 설치를 시작합니다..."
-                            # 기존에 혹시 있을지 모를 terraform 파일/폴더 삭제 (충돌 방지)
-                            rm -rf terraform_bin terraform.zip
-                            
+                            rm -rf tf_temp terraform.zip
                             curl -o terraform.zip https://releases.hashicorp.com/terraform/1.7.0/terraform_1.7.0_linux_arm64.zip
-                            
-                            # 임시 폴더에 압축 해제 후 실행 파일만 이동
                             mkdir -p ./tf_temp
                             unzip -o terraform.zip -d ./tf_temp
                             mv ./tf_temp/terraform /usr/local/bin/terraform
-                            
                             chmod +x /usr/local/bin/terraform
                             rm -rf terraform.zip ./tf_temp
-                        else
-                            echo "Terraform이 이미 설치되어 있습니다."
                         fi
                         
                         terraform --version
@@ -88,6 +90,8 @@ spec:
                 container('builder') {
                     sh '''
                         echo "--- Docker 이미지 빌드 시작 ---"
+                        # API 버전을 명시하여 빌드 실행
+                        export DOCKER_API_VERSION=1.41
                         docker build -t ${IMG_BE} ./backend
                         docker build -t ${IMG_FE} ./frontend
                     '''
@@ -116,7 +120,7 @@ spec:
                     try {
                         dir('terraform') {
                             sh 'chmod +x ../scripts/dpy-staging.sh'
-                            sh 'if command -v terraform &> /dev/null; then ../scripts/dpy-staging.sh off; else echo "Terraform not found, skip off"; fi'
+                            sh 'if command -v terraform &> /dev/null; then ../scripts/dpy-staging.sh off; else echo "Terraform not found"; fi'
                         }
                     } catch (err) {
                         echo "Cleanup skipped: ${err}"
