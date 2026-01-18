@@ -36,8 +36,29 @@ backend/logs/
 .DS_Store
 Thumbs.db
 
+# 의존성 및 빌드 결과물
 node_modules/
 dist/
 build/
 .env
 mysql_data/
+.DS_Store
+thumbs.db
+
+# Terraform 관련 (보안 및 로컬 설정)
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+*.tfvars
+# staging.tfvars 등 민감한 변수 파일 제외
+setup.conf
+staging.conf
+
+# 환경 변수 및 비밀키
+.env
+.env.local
+*.pem
+
+# Jenkins 관련 임시 파일 (필요시)
+.jenkins/
