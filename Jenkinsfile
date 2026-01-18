@@ -7,7 +7,7 @@ kind: Pod
 spec:
   containers:
   - name: builder
-    image: "node:20-bookworm" 
+    image: "node:20-bookworm"
     imagePullPolicy: "IfNotPresent"
     command:
     - cat
@@ -31,15 +31,23 @@ spec:
     }
 
     stages {
-        stage('1. 환경 준비') {
+        stage('1. 인프라 도구 설치') {
             steps {
                 container('builder') {
                     sh '''
-                        if ! command -v node &> /dev/null; then
-                            apt-get update && apt-get install -y curl
-                            curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-                            apt-get install -y nodejs
+                        echo "--- Docker 및 Terraform 설치 중 ---"
+                        apt-get update && apt-get install -y curl unzip docker.io
+                        
+                        if ! command -v terraform &> /dev/null; then
+                            # ARM64(Cherry Mac)용 테라폼 다운로드
+                            curl -O https://releases.hashicorp.com/terraform/1.7.0/terraform_1.7.0_linux_arm64.zip
+                            unzip terraform_1.7.0_linux_arm64.zip
+                            mv terraform /usr/local/bin/
+                            rm terraform_1.7.0_linux_arm64.zip
                         fi
+                        
+                        terraform --version
+                        docker --version
                     '''
                 }
             }
@@ -52,15 +60,13 @@ spec:
                         echo "--- Backend Build & Test ---"
                         cd backend
                         npm install
-                        npm run build  # <--- 이 단계가 반드시 있어야 Docker COPY가 성공합니다
+                        npm run build
                         npm test || echo "Backend test failed but continuing..."
                         cd ..
 
                         echo "--- Frontend Build ---"
                         cd frontend
                         npm install
-                        # 프론트엔드 빌드 결과물 생성 (필요시)
-                        # npm run build 
                         cd ..
                     '''
                 }
@@ -71,7 +77,7 @@ spec:
             steps {
                 container('builder') {
                     sh '''
-                        echo "이미지 빌드 시작..."
+                        echo "--- Docker 이미지 빌드 시작 ---"
                         docker build -t ${IMG_BE} ./backend
                         docker build -t ${IMG_FE} ./frontend
                     '''
@@ -99,8 +105,9 @@ spec:
                 script {
                     try {
                         dir('terraform') {
+                            # 클린업 시에도 도구가 필요할 수 있으므로 설치 확인 후 실행
                             sh 'chmod +x ../scripts/dpy-staging.sh'
-                            sh '../scripts/dpy-staging.sh off'
+                            sh '../scripts/dpy-staging.sh off || echo "Cleanup script failed"'
                         }
                     } catch (e) {
                         echo "Cleanup skipped: ${e.message}"
