@@ -38,12 +38,16 @@ spec:
                         echo "--- Docker 및 Terraform 설치 중 ---"
                         apt-get update && apt-get install -y curl unzip docker.io
                         
+                        # Terraform 설치 확인 및 실행 (Linux ARM64)
                         if ! command -v terraform &> /dev/null; then
-                            # ARM64(Mac 환경)용 테라폼 다운로드
+                            echo "Terraform 설치를 시작합니다..."
                             curl -O https://releases.hashicorp.com/terraform/1.7.0/terraform_1.7.0_linux_arm64.zip
-                            unzip terraform_1.7.0_linux_arm64.zip
+                            # -o 옵션을 사용하여 묻지 않고 덮어씁니다.
+                            unzip -o terraform_1.7.0_linux_arm64.zip
                             mv terraform /usr/local/bin/
                             rm terraform_1.7.0_linux_arm64.zip
+                        else
+                            echo "Terraform이 이미 설치되어 있습니다."
                         fi
                         
                         terraform --version
@@ -103,11 +107,11 @@ spec:
         cleanup {
             container('builder') {
                 script {
-                    // Groovy script 블록 안에서는 // 주석을 사용해야 합니다.
                     try {
                         dir('terraform') {
                             sh 'chmod +x ../scripts/dpy-staging.sh'
-                            sh '../scripts/dpy-staging.sh off || echo "Cleanup script failed"'
+                            // 테라폼이 설치된 경우에만 실행하도록 보강
+                            sh 'if command -v terraform &> /dev/null; then ../scripts/dpy-staging.sh off; else echo "Terraform not found, skip off"; fi'
                         }
                     } catch (err) {
                         echo "Cleanup skipped: ${err}"
