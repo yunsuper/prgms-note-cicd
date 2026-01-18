@@ -6,17 +6,18 @@ terraform {
   }
 }
 
+# 변수 선언만 하고 기본값은 비워둡니다.
 variable "kubernetes_config_path" {
   type    = string
-  default = null # 경로가 없으면 내부 권한을 사용하도록 허용
+  default = "" 
 }
 
 provider "kubernetes" {
-  # config_path가 있으면 사용하고, 없으면(null) 자동으로 내부 토큰을 찾습니다.
-  config_path = var.kubernetes_config_path
+  # config_path가 빈 문자열이면 테라폼은 자동으로 'In-Cluster' 인증(ServiceAccount)을 사용합니다.
+  config_path = var.kubernetes_config_path != "" ? var.kubernetes_config_path : null
 }
 
-# (기존 네임스페이스 선언은 그대로 두세요)
+# 네임스페이스 정의
 resource "kubernetes_namespace" "ns" {
   metadata {
     name = "prgms-notes"
