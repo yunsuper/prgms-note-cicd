@@ -30,6 +30,7 @@ spec:
         IMG_FE = "yunsuper/notes-fe:latest"
         // [중요] PC의 도커 데스크탑 버전에 맞춰 API 버전을 1.44로 상향 조정
         DOCKER_API_VERSION = "1.44"
+        TF_VAR_kubernetes_config_path = ""
     }
 
     stages {
