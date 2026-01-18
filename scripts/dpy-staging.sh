@@ -5,21 +5,19 @@ VAR_FILE="staging.tfvars"
 
 # 환경 변수가 없을 경우 사용할 기본값 설정
 : ${KUBECONFIG_PATH:="~/.kube/config"}
-# [중요] <Your image URI here> 대신 로컬 빌드 이미지명을 기본값으로 넣거나 
-# 젠킨스 파이프라인에서 환경변수로 주입받습니다.
 : ${IMG_BE:="yunsuper/notes-be:latest"}
 : ${IMG_FE:="yunsuper/notes-fe:latest"}
 
 if [ "$1" = "on" ] ; then
     echo "--- 스테이징 환경 배포 시작 ---"
     
-    # 1. 설정 파일 병합 (S3 backend가 제거된 staging.conf와 setup.conf를 합침)
-    cat staging.conf setup.conf > notes.tf
+    # [수정] cat staging.conf setup.conf > notes.tf 를 삭제했습니다.
+    # 이제 폴더 내의 각 .tf 파일(provider, backend, frontend, selenium)을 테라폼이 직접 읽습니다.
     
-    # 2. Terraform 초기화 (로컬 백엔드 모드)
+    # 1. Terraform 초기화 (로컬 백엔드 모드)
     terraform init -reconfigure -no-color
     
-    # 3. Terraform 실행 (이미지 주소 및 변수 파일 주입)
+    # 2. Terraform 실행 (이미지 주소 및 변수 파일 주입)
     terraform apply --auto-approve -no-color \
         -var-file="${VAR_FILE}" \
         -var "kubernetes_config_path=${KUBECONFIG_PATH}" \
@@ -29,8 +27,7 @@ if [ "$1" = "on" ] ; then
 elif [ "$1" = "off" ] ; then
     echo "--- 스테이징 자원 회수 (Cleanup) 시작 ---"
     
-    # 제거 시에도 설정 파일 구조가 동일해야 함
-    cat staging.conf setup.conf > notes.tf
+    # [수정] 제거 시에도 중복 방지를 위해 cat 명령어를 삭제합니다.
     
     terraform init -reconfigure -no-color
     terraform destroy --auto-approve -no-color \
