@@ -28,8 +28,8 @@ spec:
     environment {
         IMG_BE = "yunsuper/notes-be:latest"
         IMG_FE = "yunsuper/notes-fe:latest"
-        // [추가] 도커 API 버전 호환성 에러 해결을 위한 설정
-        DOCKER_API_VERSION = "1.41" 
+        // [중요] PC의 도커 데스크탑 버전에 맞춰 API 버전을 1.44로 상향 조정
+        DOCKER_API_VERSION = "1.44"
     }
 
     stages {
@@ -39,10 +39,9 @@ spec:
                     sh '''
                         echo "--- 인프라 도구 설치 ---"
                         apt-get update
-                        # 최신 docker-ce-cli 설치를 위해 패키지 업데이트
                         apt-get install -y curl unzip ca-certificates gnupg lsb-release
                         
-                        # Docker 공식 CLI 설치 (버전 불일치 방지)
+                        # Docker CLI 설치 (이미 설치되어 있어도 최신 유지)
                         if ! command -v docker &> /dev/null; then
                             apt-get install -y docker.io
                         fi
@@ -89,9 +88,9 @@ spec:
             steps {
                 container('builder') {
                     sh '''
-                        echo "--- Docker 이미지 빌드 시작 ---"
-                        # API 버전을 명시하여 빌드 실행
-                        export DOCKER_API_VERSION=1.41
+                        echo "--- Docker 이미지 빌드 시작 (API Ver: ${DOCKER_API_VERSION}) ---"
+                        # 빌드 시점에 환경변수 재확인
+                        export DOCKER_API_VERSION=1.44
                         docker build -t ${IMG_BE} ./backend
                         docker build -t ${IMG_FE} ./frontend
                     '''
