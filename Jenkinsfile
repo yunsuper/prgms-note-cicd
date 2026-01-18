@@ -38,14 +38,20 @@ spec:
                         echo "--- Docker 및 Terraform 설치 중 ---"
                         apt-get update && apt-get install -y curl unzip docker.io
                         
-                        # Terraform 설치 확인 및 실행 (Linux ARM64)
                         if ! command -v terraform &> /dev/null; then
                             echo "Terraform 설치를 시작합니다..."
-                            curl -O https://releases.hashicorp.com/terraform/1.7.0/terraform_1.7.0_linux_arm64.zip
-                            # -o 옵션을 사용하여 묻지 않고 덮어씁니다.
-                            unzip -o terraform_1.7.0_linux_arm64.zip
-                            mv terraform /usr/local/bin/
-                            rm terraform_1.7.0_linux_arm64.zip
+                            # 기존에 혹시 있을지 모를 terraform 파일/폴더 삭제 (충돌 방지)
+                            rm -rf terraform_bin terraform.zip
+                            
+                            curl -o terraform.zip https://releases.hashicorp.com/terraform/1.7.0/terraform_1.7.0_linux_arm64.zip
+                            
+                            # 임시 폴더에 압축 해제 후 실행 파일만 이동
+                            mkdir -p ./tf_temp
+                            unzip -o terraform.zip -d ./tf_temp
+                            mv ./tf_temp/terraform /usr/local/bin/terraform
+                            
+                            chmod +x /usr/local/bin/terraform
+                            rm -rf terraform.zip ./tf_temp
                         else
                             echo "Terraform이 이미 설치되어 있습니다."
                         fi
@@ -110,7 +116,6 @@ spec:
                     try {
                         dir('terraform') {
                             sh 'chmod +x ../scripts/dpy-staging.sh'
-                            // 테라폼이 설치된 경우에만 실행하도록 보강
                             sh 'if command -v terraform &> /dev/null; then ../scripts/dpy-staging.sh off; else echo "Terraform not found, skip off"; fi'
                         }
                     } catch (err) {
